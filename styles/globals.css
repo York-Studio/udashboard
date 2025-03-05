@@ -1,0 +1,97 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-bg-light text-gray-900 transition-colors duration-200;
+  }
+  
+  .dark body {
+    @apply bg-dark-bg text-dark-text;
+  }
+}
+
+@layer components {
+  .card {
+    @apply bg-card-bg p-6 rounded-lg shadow-sm transition-colors duration-200;
+  }
+  
+  .dark .card {
+    @apply bg-dark-card border-dark-border;
+  }
+  
+  .dashboard-container {
+    @apply p-4 md:p-6 lg:p-8 max-w-screen-2xl mx-auto transition-colors duration-200;
+  }
+  
+  .dashboard-grid {
+    @apply grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6;
+  }
+  
+  .dashboard-card {
+    @apply bg-card-bg rounded-xl shadow-sm p-4 border border-gray-100 hover:shadow-md transition-all duration-200;
+  }
+  
+  .dark .dashboard-card {
+    @apply bg-dark-card border-dark-border hover:border-gray-600;
+  }
+  
+  .dashboard-card-header {
+    @apply text-lg font-semibold mb-3 text-gray-800 flex justify-between items-center transition-colors duration-200;
+  }
+  
+  .dark .dashboard-card-header {
+    @apply text-dark-text;
+  }
+  
+  .dashboard-card-full {
+    @apply col-span-1 md:col-span-2 lg:col-span-3 xl:col-span-4;
+  }
+  
+  .dashboard-card-wide {
+    @apply col-span-1 md:col-span-2;
+  }
+  
+  .button-primary {
+    @apply px-4 py-2 bg-primary text-gray-800 rounded-md hover:bg-opacity-80 transition-colors duration-200;
+  }
+  
+  .button-secondary {
+    @apply px-4 py-2 bg-secondary text-gray-800 rounded-md hover:bg-opacity-80 transition-colors duration-200;
+  }
+  
+  /* Dark mode specific styles */
+  .dark .bg-white {
+    @apply bg-dark-card;
+  }
+  
+  .dark .text-gray-800 {
+    @apply text-dark-text;
+  }
+  
+  .dark .text-gray-700 {
+    @apply text-gray-300;
+  }
+  
+  .dark .text-gray-600 {
+    @apply text-gray-400;
+  }
+  
+  /* Fix for circular dependency - use direct color value instead of @apply */
+  .dark .text-gray-500 {
+    color: #9ca3af; /* Equivalent to text-gray-400 */
+  }
+  
+  .dark .border-gray-300 {
+    @apply border-gray-600;
+  }
+  
+  .dark .border-gray-100 {
+    @apply border-dark-border;
+  }
+  
+  .dark .border-b {
+    @apply border-dark-border;
+  }
+} 

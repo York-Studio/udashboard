@@ -1,0 +1,43 @@
+{
+  "name": "restaurant-dashboard",
+  "version": "1.0.0",
+  "description": "Restaurant dashboard providing real-time insights into booking trends, customer traffic, financial performance, staffing efficiency, and inventory levels.",
+  "main": "index.js",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "keywords": [
+    "restaurant",
+    "dashboard",
+    "analytics",
+    "next.js",
+    "react"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@types/node": "^20.11.19",
+    "@types/react": "^18.2.55",
+    "@types/react-dom": "^18.2.19",
+    "airtable": "^0.12.2",
+    "autoprefixer": "^10.4.16",
+    "axios": "^1.6.7",
+    "chart.js": "^4.4.1",
+    "d3": "^7.8.5",
+    "date-fns": "^3.3.1",
+    "eslint": "^8.57.0",
+    "eslint-config-next": "^14.1.0",
+    "next": "^14.1.0",
+    "postcss": "^8.4.31",
+    "react": "^18.2.0",
+    "react-chartjs-2": "^5.2.0",
+    "react-dom": "^18.2.0",
+    "react-hot-toast": "^2.5.2",
+    "react-icons": "^5.5.0",
+    "tailwindcss": "^3.3.5",
+    "typescript": "^5.3.3"
+  }
+}

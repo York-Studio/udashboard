@@ -1,110 +1,154 @@
 # Restaurant Dashboard
 
-A comprehensive dashboard for restaurant management, featuring staff scheduling, inventory management, financial tracking, and booking management.
+A modern dashboard for restaurant management, featuring booking capacity monitoring, financial overview, inventory management, staff scheduling, and user management.
 
 ## Features
 
-- User authentication with role-based access control
-- Staff scheduling and management
-- Inventory tracking
-- Financial reporting
-- Booking management
-- Dark mode support
-- Responsive design
+- **Booking Management**: Track reservations and table availability
+- **Financial Overview**: Monitor revenue and financial performance
+- **Inventory Management**: Keep track of stock levels and reorder needs
+- **Staff Scheduling**: Manage staff shifts and availability
+- **User Management**: Admin-only access to manage system users
+
+## Tech Stack
+
+- Next.js
+- React
+- TypeScript
+- Tailwind CSS
+- Airtable (for data storage)
+- Docker (for deployment)
 
 ## Local Development
 
-1. Clone the repository
-2. Install dependencies:
-   ```
-   npm install
-   ```
-3. Create a `.env.local` file with the following variables:
-   ```
-   NEXT_PUBLIC_AIRTABLE_API_KEY=your_airtable_api_key
-   NEXT_PUBLIC_AIRTABLE_BASE_ID=your_airtable_base_id
-   ```
-4. Run the development server:
-   ```
-   npm run dev
-   ```
-5. Open [http://localhost:3000](http://localhost:3000) in your browser
-
-## Deployment to Digital Ocean
-
 ### Prerequisites
 
-- A Digital Ocean account
-- A domain name with DNS configured to point a subdomain to your Digital Ocean droplet
+- Node.js 18 or later
+- npm or yarn
 
-### Option 1: Manual Deployment
+### Setup
 
-1. Create a new Digital Ocean Droplet with Docker pre-installed
-2. SSH into your Droplet
-3. Clone this repository:
-   ```
+1. Clone the repository:
+   ```bash
    git clone https://github.com/yourusername/restaurant-dashboard.git
    cd restaurant-dashboard
    ```
-4. Create a `.env` file with your environment variables:
-   ```
-   NEXT_PUBLIC_AIRTABLE_API_KEY=your_airtable_api_key
-   NEXT_PUBLIC_AIRTABLE_BASE_ID=your_airtable_base_id
-   ```
-5. Build and run the Docker container:
-   ```
-   docker-compose up -d --build
-   ```
-6. Install and configure Nginx:
-   ```
-   sudo apt-get update
-   sudo apt-get install -y nginx
-   sudo cp nginx.conf /etc/nginx/sites-available/your-subdomain.com
-   sudo sed -i 's/dashboard.yourdomain.com/your-subdomain.com/g' /etc/nginx/sites-available/your-subdomain.com
-   sudo ln -sf /etc/nginx/sites-available/your-subdomain.com /etc/nginx/sites-enabled/
-   sudo nginx -t && sudo systemctl reload nginx
-   ```
-7. Set up SSL with Let's Encrypt:
-   ```
-   sudo apt-get install -y certbot python3-certbot-nginx
-   sudo certbot --nginx -d your-subdomain.com
+
+2. Install dependencies:
+   ```bash
+   npm install
    ```
 
-### Option 2: Using the Deployment Script
+3. Create a `.env.local` file in the root directory with your Airtable credentials:
+   ```
+   NEXT_PUBLIC_AIRTABLE_PERSONAL_ACCESS_TOKEN=your_token_here
+   NEXT_PUBLIC_AIRTABLE_BASE_ID=your_base_id_here
+   NEXT_PUBLIC_RESTAURANT_TOTAL_SEATS=120
+   ```
 
-1. Create a new Digital Ocean Droplet with Docker pre-installed
-2. SSH into your Droplet
-3. Clone this repository:
+   > **Note**: If you don't provide Airtable credentials, the application will use mock data.
+
+4. Start the development server:
+   ```bash
+   npm run dev
    ```
-   git clone https://github.com/yourusername/restaurant-dashboard.git
-   cd restaurant-dashboard
-   ```
-4. Run the deployment script:
-   ```
+
+5. Open [http://localhost:3000](http://localhost:3000) in your browser.
+
+## Deployment
+
+### Using Docker (Recommended)
+
+1. Make sure Docker is installed on your server.
+
+2. Use the provided deployment script:
+   ```bash
    ./deploy.sh
    ```
-5. Follow the prompts to configure your deployment
 
-## Updating the Application
+   This script will:
+   - Build the Docker image
+   - Stop any existing container
+   - Start a new container with your environment variables
 
-To update the application after making changes:
+### Manual Deployment to Digital Ocean
 
-1. SSH into your Droplet
-2. Navigate to the application directory
-3. Pull the latest changes:
-   ```
-   git pull
-   ```
-4. Rebuild and restart the Docker container:
-   ```
-   docker-compose up -d --build
+1. Create a Digital Ocean Droplet (Basic plan with Docker pre-installed is recommended).
+
+2. SSH into your Droplet:
+   ```bash
+   ssh root@your_droplet_ip
    ```
 
-## Environment Variables
+3. Clone the repository:
+   ```bash
+   git clone https://github.com/yourusername/restaurant-dashboard.git
+   cd restaurant-dashboard
+   ```
 
-- `NEXT_PUBLIC_AIRTABLE_API_KEY`: Your Airtable API key
-- `NEXT_PUBLIC_AIRTABLE_BASE_ID`: Your Airtable Base ID
+4. Set up environment variables:
+   ```bash
+   export NEXT_PUBLIC_AIRTABLE_PERSONAL_ACCESS_TOKEN="your_token_here"
+   export NEXT_PUBLIC_AIRTABLE_BASE_ID="your_base_id_here"
+   export NEXT_PUBLIC_RESTAURANT_TOTAL_SEATS="120"
+   ```
+
+5. Run the deployment script:
+   ```bash
+   chmod +x deploy.sh
+   ./deploy.sh
+   ```
+
+6. (Optional) Set up Nginx as a reverse proxy:
+   ```bash
+   apt-get update
+   apt-get install -y nginx
+   ```
+
+   Create an Nginx configuration file:
+   ```bash
+   nano /etc/nginx/sites-available/restaurant-dashboard
+   ```
+
+   Add the following configuration:
+   ```
+   server {
+       listen 80;
+       server_name your_domain.com;
+
+       location / {
+           proxy_pass http://localhost:3000;
+           proxy_http_version 1.1;
+           proxy_set_header Upgrade $http_upgrade;
+           proxy_set_header Connection 'upgrade';
+           proxy_set_header Host $host;
+           proxy_cache_bypass $http_upgrade;
+       }
+   }
+   ```
+
+   Enable the site and restart Nginx:
+   ```bash
+   ln -s /etc/nginx/sites-available/restaurant-dashboard /etc/nginx/sites-enabled/
+   nginx -t
+   systemctl restart nginx
+   ```
+
+7. (Optional) Set up SSL with Certbot:
+   ```bash
+   apt-get install -y certbot python3-certbot-nginx
+   certbot --nginx -d your_domain.com
+   ```
+
+## Authentication
+
+The application uses a simple authentication system with the following demo accounts:
+
+- **Admin**: Username: `admin`, Password: `admin123`
+- **Manager**: Username: `manager`, Password: `manager123`
+- **Chef**: Username: `chef`, Password: `chef123`
+- **Waiter**: Username: `waiter`, Password: `waiter123`
 
 ## License
 
-[MIT](LICENSE) 
+MIT 

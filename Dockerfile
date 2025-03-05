@@ -50,4 +50,5 @@ ENV PORT 3000
 # set hostname to localhost
 ENV HOSTNAME "0.0.0.0"
 
+# Comment: The application will now use mock data if Airtable credentials are not provided
 CMD ["node", "server.js"] 

@@ -1,206 +1,269 @@
 # Digital Ocean Deployment Guide
 
-This guide provides step-by-step instructions for deploying the Restaurant Dashboard application to a Digital Ocean Droplet and configuring it to run on a subdomain of your website.
+This guide will walk you through the complete setup of your Restaurant Dashboard on Digital Ocean, including domain configuration, SSL setup, and Airtable integration.
 
-## 1. Create a Digital Ocean Droplet
+## 1. Domain Configuration
 
-1. Log in to your Digital Ocean account
-2. Click on "Create" and select "Droplets"
-3. Choose an image: Select the "Marketplace" tab and search for "Docker"
-4. Select the "Docker" image (this comes with Docker pre-installed)
-5. Choose a plan:
-   - For a small to medium restaurant, the Basic plan with 2GB RAM / 1 CPU should be sufficient
-   - For larger operations, consider 4GB RAM / 2 CPU
-6. Choose a datacenter region closest to your primary users
-7. Add your SSH key or create a password
-8. Choose a hostname (e.g., restaurant-dashboard)
-9. Click "Create Droplet"
+### 1.1 Point Your Domain to Digital Ocean
 
-## 2. Configure DNS for Your Subdomain
+First, you need to point your domain to your Digital Ocean droplet:
 
-1. Log in to your domain registrar's website
-2. Navigate to the DNS management section
-3. Add a new A record:
-   - Type: A
-   - Name: dashboard (or your preferred subdomain)
-   - Value: Your Digital Ocean Droplet's IP address
-   - TTL: 3600 (or default)
-4. Save the changes
+1. Log in to your domain registrar (e.g., GoDaddy, Namecheap, etc.)
+2. Find the DNS management section
+3. Add an A record:
+   - **Host/Name**: Use `@` for the root domain or `dashboard` for a subdomain
+   - **Value/Points to**: Your Digital Ocean droplet's IP address
+   - **TTL**: 3600 (or default)
 
-Note: DNS changes can take up to 48 hours to propagate, but typically take 15-30 minutes.
+4. If you want to use `www` as well, add a CNAME record:
+   - **Host/Name**: `www`
+   - **Value/Points to**: Your root domain (e.g., `yourdomain.com`)
+   - **TTL**: 3600 (or default)
 
-## 3. Connect to Your Droplet
+> **Note**: DNS changes can take up to 48 hours to propagate, but typically take 15-30 minutes.
 
-1. Open your terminal
-2. Connect to your Droplet via SSH:
-   ```
-   ssh root@your-droplet-ip
-   ```
-   If you're using a password, enter it when prompted.
+### 1.2 Configure Nginx
 
-## 4. Deploy the Application
+Now, let's set up Nginx to serve your application:
 
-### Option 1: Using the Deployment Script (Recommended)
+1. Update the nginx.conf file with your actual domain:
 
-1. Clone the repository:
-   ```
-   git clone https://github.com/yourusername/restaurant-dashboard.git
-   cd restaurant-dashboard
-   ```
-
-2. Run the deployment script:
-   ```
-   chmod +x deploy.sh
-   ./deploy.sh
-   ```
-
-3. Follow the prompts:
-   - Enter your subdomain (e.g., dashboard.yourdomain.com)
-   - Enter your Airtable API Key
-   - Enter your Airtable Base ID
-   - Choose whether to set up SSL (recommended)
-
-### Option 2: Manual Deployment
-
-1. Clone the repository:
-   ```
-   git clone https://github.com/yourusername/restaurant-dashboard.git
-   cd restaurant-dashboard
-   ```
-
-2. Create a `.env` file:
-   ```
-   cat > .env << EOL
-   NEXT_PUBLIC_AIRTABLE_API_KEY=your_airtable_api_key
-   NEXT_PUBLIC_AIRTABLE_BASE_ID=your_airtable_base_id
-   EOL
-   ```
-
-3. Build and start the Docker container:
-   ```
-   docker-compose up -d --build
-   ```
-
-4. Install and configure Nginx:
-   ```
-   sudo apt-get update
-   sudo apt-get install -y nginx
-   sudo cp nginx.conf /etc/nginx/sites-available/your-subdomain.com
-   sudo sed -i 's/dashboard.yourdomain.com/your-subdomain.com/g' /etc/nginx/sites-available/your-subdomain.com
-   sudo ln -sf /etc/nginx/sites-available/your-subdomain.com /etc/nginx/sites-enabled/
-   sudo nginx -t && sudo systemctl reload nginx
-   ```
-
-5. Set up SSL with Let's Encrypt:
-   ```
-   sudo apt-get install -y certbot python3-certbot-nginx
-   sudo certbot --nginx -d your-subdomain.com
-   ```
-
-## 5. Verify the Deployment
-
-1. Open your browser and navigate to your subdomain (https://dashboard.yourdomain.com)
-2. You should see the login page of the Restaurant Dashboard
-3. Log in with your credentials
-
-## 6. Maintenance and Updates
-
-### Updating the Application
-
-1. SSH into your Droplet
-2. Navigate to the application directory:
-   ```
-   cd restaurant-dashboard
-   ```
-3. Pull the latest changes:
-   ```
-   git pull
-   ```
-4. Rebuild and restart the Docker container:
-   ```
-   docker-compose up -d --build
-   ```
-
-### Monitoring Logs
-
-To view the application logs:
-```
-docker-compose logs -f
+```bash
+# Replace dashboard.yourdomain.com with your actual domain
+sed -i 's/dashboard.yourdomain.com/your-actual-domain.com/g' nginx.conf
 ```
 
-### Backing Up Your Data
+2. Copy the Nginx configuration to the proper location:
 
-Your data is stored in Airtable, which provides its own backup mechanisms. However, you may want to back up your configuration:
+```bash
+sudo cp nginx.conf /etc/nginx/sites-available/restaurant-dashboard
+```
 
-1. Back up your `.env` file:
-   ```
-   cp .env .env.backup
-   ```
+3. Create a symbolic link to enable the site:
 
-2. Back up your Nginx configuration:
-   ```
-   sudo cp /etc/nginx/sites-available/your-subdomain.com nginx.conf.backup
-   ```
+```bash
+sudo ln -sf /etc/nginx/sites-available/restaurant-dashboard /etc/nginx/sites-enabled/
+```
 
-## 7. Troubleshooting
+4. Test the Nginx configuration:
 
-### Application Not Loading
+```bash
+sudo nginx -t
+```
 
-1. Check if the Docker container is running:
-   ```
-   docker-compose ps
-   ```
+5. If the test is successful, reload Nginx:
 
-2. If it's not running, check the logs:
-   ```
-   docker-compose logs
-   ```
+```bash
+sudo systemctl reload nginx
+```
 
-3. Restart the container:
-   ```
-   docker-compose down
-   docker-compose up -d
-   ```
+## 2. SSL Certificate Setup
 
-### SSL Certificate Issues
+Let's secure your site with a free SSL certificate from Let's Encrypt:
 
-1. Check the Nginx configuration:
-   ```
-   sudo nginx -t
-   ```
+1. Install Certbot:
 
-2. Renew the SSL certificate:
-   ```
-   sudo certbot renew
-   ```
+```bash
+sudo apt-get update
+sudo apt-get install -y certbot python3-certbot-nginx
+```
 
-### DNS Issues
+2. Obtain and install the SSL certificate:
 
-1. Verify your DNS settings at your domain registrar
-2. Check if the subdomain resolves to your Droplet's IP:
-   ```
-   nslookup your-subdomain.com
-   ```
+```bash
+sudo certbot --nginx -d your-actual-domain.com
+```
 
-## 8. Security Considerations
+3. Follow the prompts from Certbot:
+   - Enter your email address for renewal notifications
+   - Agree to the terms of service
+   - Choose whether to redirect HTTP traffic to HTTPS (recommended)
 
-1. Set up a firewall:
-   ```
-   sudo ufw allow 22/tcp
-   sudo ufw allow 80/tcp
-   sudo ufw allow 443/tcp
-   sudo ufw enable
-   ```
+Certbot will automatically update your Nginx configuration to use SSL.
 
-2. Set up automatic security updates:
-   ```
-   sudo apt-get install unattended-upgrades
-   sudo dpkg-reconfigure -plow unattended-upgrades
-   ```
+## 3. Airtable Integration
 
-3. Consider setting up fail2ban to protect against brute force attacks:
-   ```
-   sudo apt-get install fail2ban
-   sudo systemctl enable fail2ban
-   sudo systemctl start fail2ban
-   ``` 
+To connect your application to Airtable, you need to set up the required credentials:
+
+### 3.1 Get Your Airtable Credentials
+
+1. Log in to your [Airtable account](https://airtable.com/)
+2. Go to your [account page](https://airtable.com/account)
+3. Under the API section, you'll find your Personal Access Token (or create a new one)
+4. To get your Base ID:
+   - Open the Airtable base you want to use
+   - Look at the URL: `https://airtable.com/[BASE_ID]/[TABLE_NAME]/[VIEW_NAME]`
+   - The Base ID is the part after `airtable.com/` and before the next `/`
+
+### 3.2 Update Environment Variables
+
+There are two ways to provide these credentials to your application:
+
+#### Option 1: Using Environment Variables (Recommended)
+
+1. Stop the current container:
+
+```bash
+docker stop restaurant-dashboard
+docker rm restaurant-dashboard
+```
+
+2. Set the environment variables:
+
+```bash
+export NEXT_PUBLIC_AIRTABLE_PERSONAL_ACCESS_TOKEN="your_token_here"
+export NEXT_PUBLIC_AIRTABLE_BASE_ID="your_base_id_here"
+export NEXT_PUBLIC_RESTAURANT_TOTAL_SEATS="120"
+```
+
+3. Run the deployment script again:
+
+```bash
+./deploy.sh
+```
+
+#### Option 2: Using a .env File
+
+1. Create a .env file in your project directory:
+
+```bash
+cat > .env.local << EOL
+NEXT_PUBLIC_AIRTABLE_PERSONAL_ACCESS_TOKEN=your_token_here
+NEXT_PUBLIC_AIRTABLE_BASE_ID=your_base_id_here
+NEXT_PUBLIC_RESTAURANT_TOTAL_SEATS=120
+EOL
+```
+
+2. Rebuild and restart the container:
+
+```bash
+docker stop restaurant-dashboard
+docker rm restaurant-dashboard
+docker build -t restaurant-dashboard .
+docker run -d --name restaurant-dashboard -p 3000:3000 --env-file .env.local restaurant-dashboard
+```
+
+## 4. Verify Your Setup
+
+1. Visit your domain in a web browser (https://your-actual-domain.com)
+2. Log in with one of the demo accounts:
+   - Admin: Username: `admin`, Password: `admin123`
+   - Manager: Username: `manager`, Password: `manager123`
+   - Chef: Username: `chef`, Password: `chef123`
+   - Waiter: Username: `waiter`, Password: `waiter123`
+
+3. Verify that you can see real data from your Airtable base (if configured) or the mock data
+
+## 5. Troubleshooting
+
+### 5.1 Nginx Issues
+
+If you encounter issues with Nginx:
+
+```bash
+# Check Nginx status
+sudo systemctl status nginx
+
+# Check Nginx error logs
+sudo tail -f /var/log/nginx/error.log
+
+# Check Nginx access logs
+sudo tail -f /var/log/nginx/access.log
+```
+
+### 5.2 Docker Container Issues
+
+If you encounter issues with the Docker container:
+
+```bash
+# Check container logs
+docker logs restaurant-dashboard
+
+# Check if the container is running
+docker ps -a
+
+# Restart the container
+docker restart restaurant-dashboard
+```
+
+### 5.3 SSL Certificate Issues
+
+If you encounter issues with SSL:
+
+```bash
+# Check certificate status
+sudo certbot certificates
+
+# Renew certificates manually
+sudo certbot renew --dry-run
+```
+
+## 6. Maintenance
+
+### 6.1 Updating the Application
+
+To update the application after making changes:
+
+1. Pull the latest changes:
+
+```bash
+git pull
+```
+
+2. Rebuild and restart the container:
+
+```bash
+./deploy.sh
+```
+
+### 6.2 SSL Certificate Renewal
+
+Certbot automatically renews certificates before they expire. To manually trigger a renewal:
+
+```bash
+sudo certbot renew
+```
+
+### 6.3 Backup Your Configuration
+
+It's a good practice to back up your configuration files:
+
+```bash
+# Create a backup directory
+mkdir -p ~/backups/$(date +%Y-%m-%d)
+
+# Backup Nginx configuration
+sudo cp /etc/nginx/sites-available/restaurant-dashboard ~/backups/$(date +%Y-%m-%d)/
+
+# Backup environment variables
+env | grep NEXT_PUBLIC > ~/backups/$(date +%Y-%m-%d)/environment_variables.txt
+```
+
+## 7. Security Recommendations
+
+1. **Firewall**: Ensure your firewall only allows necessary ports (80, 443, 22):
+
+```bash
+sudo ufw allow 22/tcp
+sudo ufw allow 80/tcp
+sudo ufw allow 443/tcp
+sudo ufw enable
+```
+
+2. **SSH Security**: Consider using SSH keys instead of passwords and disabling root login.
+
+3. **Regular Updates**: Keep your system updated:
+
+```bash
+sudo apt-get update
+sudo apt-get upgrade
+```
+
+4. **Monitoring**: Consider setting up monitoring for your droplet using Digital Ocean's monitoring tools or a third-party service.
+
+## 8. Next Steps
+
+- Consider setting up automated backups for your Droplet
+- Implement a CI/CD pipeline for automated deployments
+- Set up monitoring and alerting for your application
+- Customize the application further to meet your specific needs 

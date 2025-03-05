@@ -42,10 +42,11 @@ const initialUsers: User[] = [
 ];
 
 // Define the AuthContext interface
-interface AuthContextType {
+export interface AuthContextType {
   user: User | null;
   users: User[];
   isAuthenticated: boolean;
+  loading: boolean;
   login: (username: string, password: string) => Promise<boolean>;
   logout: () => void;
   addUser: (user: Omit<User, 'id'> & { id: string }) => boolean;
@@ -58,6 +59,7 @@ const AuthContext = createContext<AuthContextType>({
   user: null,
   users: [],
   isAuthenticated: false,
+  loading: true,
   login: async () => false,
   logout: () => {},
   addUser: () => false,
@@ -74,6 +76,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [users, setUsers] = useState<User[]>(initialUsers);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const [loading, setLoading] = useState<boolean>(true);
 
   // Check local storage for existing user session on mount
   useEffect(() => {
@@ -88,6 +91,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         localStorage.removeItem('user');
       }
     }
+    setLoading(false);
   }, []);
 
   // Login function
@@ -184,6 +188,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         user,
         users,
         isAuthenticated,
+        loading,
         login,
         logout,
         addUser,

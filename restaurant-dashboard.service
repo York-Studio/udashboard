@@ -1,0 +1,19 @@
+[Unit]
+Description=Restaurant Dashboard Next.js Application
+After=network.target
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/opt/restaurant-dashboard
+ExecStart=/usr/bin/npm start
+Restart=on-failure
+Environment=NODE_ENV=production
+Environment=PORT=3000
+Environment=NEXT_PUBLIC_AIRTABLE_PERSONAL_ACCESS_TOKEN=
+Environment=NEXT_PUBLIC_AIRTABLE_BASE_ID=
+Environment=NEXT_PUBLIC_RESTAURANT_TOTAL_SEATS=120
+# Add more environment variables as needed
+
+[Install]
+WantedBy=multi-user.target 

@@ -17,7 +17,6 @@ A modern dashboard for restaurant management, featuring booking capacity monitor
 - TypeScript
 - Tailwind CSS
 - Airtable (for data storage)
-- Docker (for deployment)
 
 ## Local Development
 
@@ -46,7 +45,10 @@ A modern dashboard for restaurant management, featuring booking capacity monitor
    NEXT_PUBLIC_RESTAURANT_TOTAL_SEATS=120
    ```
 
-   > **Note**: If you don't provide Airtable credentials, the application will use mock data.
+   > **Note**: 
+   > - This application uses Airtable's Personal Access Tokens for authentication, not legacy API keys.
+   > - If you don't provide Airtable credentials, the application will use mock data.
+   > - See `AIRTABLE_AUTHENTICATION.md` for detailed setup instructions.
 
 4. Start the development server:
    ```bash
@@ -57,7 +59,7 @@ A modern dashboard for restaurant management, featuring booking capacity monitor
 
 ## Deployment
 
-### Using Docker (Recommended)
+### Using Docker
 
 1. Make sure Docker is installed on your server.
 
@@ -70,6 +72,38 @@ A modern dashboard for restaurant management, featuring booking capacity monitor
    - Build the Docker image
    - Stop any existing container
    - Start a new container with your environment variables
+
+### Direct Deployment to Ubuntu Server
+
+1. Set up an Ubuntu Server (20.04 LTS or newer recommended).
+
+2. Clone the repository:
+   ```bash
+   git clone https://github.com/yourusername/restaurant-dashboard.git
+   cd restaurant-dashboard
+   ```
+
+3. Make the Ubuntu deployment script executable:
+   ```bash
+   chmod +x ubuntu-deploy.sh
+   ```
+
+4. Run the deployment script (optionally with your domain):
+   ```bash
+   ./ubuntu-deploy.sh your-domain.com
+   ```
+
+   This script will:
+   - Install Node.js if not already installed
+   - Set up the application in `/opt/restaurant-dashboard`
+   - **Interactively prompt for your Airtable credentials**
+   - Configure a systemd service for auto-startup
+   - Set up Nginx as a reverse proxy
+   - Optionally configure SSL with Let's Encrypt
+
+5. During deployment, you'll be prompted to enter your Airtable personal access token and base ID. This makes configuration easier than manually setting environment variables.
+
+6. For detailed instructions, see the `UBUNTU_SETUP.md` file.
 
 ### Manual Deployment to Digital Ocean
 

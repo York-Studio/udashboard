@@ -18,6 +18,7 @@ const useMockData = !personalAccessToken || !baseId;
 // Only initialize Airtable if we have the required credentials
 let base: any = null;
 if (!useMockData) {
+  // Use the personal access token for authentication
   base = new Airtable({ apiKey: personalAccessToken }).base(baseId as string);
 }
 

@@ -24,6 +24,30 @@ if ! command -v node &> /dev/null; then
     echo -e "${GREEN}Node.js installed successfully!${NC}"
 fi
 
+# Create temporary swap space to prevent memory issues during build
+echo -e "${YELLOW}Setting up temporary swap space for the build process...${NC}"
+SWAP_FILE="/swapfile"
+if [ ! -f "$SWAP_FILE" ]; then
+    echo -e "${YELLOW}Creating 2GB swap file...${NC}"
+    sudo fallocate -l 2G $SWAP_FILE
+    sudo chmod 600 $SWAP_FILE
+    sudo mkswap $SWAP_FILE
+    sudo swapon $SWAP_FILE
+    echo -e "${GREEN}Swap file created and activated.${NC}"
+else
+    echo -e "${GREEN}Swap file already exists.${NC}"
+    sudo swapon $SWAP_FILE
+fi
+
+# Check if swap is enabled
+SWAP_ENABLED=$(sudo swapon --show)
+if [ -z "$SWAP_ENABLED" ]; then
+    echo -e "${RED}Warning: Failed to enable swap. The build might fail due to memory constraints.${NC}"
+else
+    echo -e "${GREEN}Swap is enabled. Available memory for build:${NC}"
+    free -h
+fi
+
 # Create deployment directory
 DEPLOY_DIR="/opt/restaurant-dashboard"
 echo -e "${YELLOW}Setting up deployment directory at ${DEPLOY_DIR}...${NC}"
@@ -75,9 +99,50 @@ echo -e "${YELLOW}Installing dependencies...${NC}"
 cd $DEPLOY_DIR
 npm ci
 
+# Install specific TypeScript dependencies to avoid compatibility issues
+echo -e "${YELLOW}Installing TypeScript dependencies...${NC}"
+npm install --save-dev typescript@4.9.5 @types/react@18.2.0 @types/node@18.15.0
+
+# Create fix for React Icons TypeScript errors
+echo -e "${YELLOW}Creating TypeScript fixes for React Icons...${NC}"
+cat > $DEPLOY_DIR/react-icons.d.ts << EOL
+import React from 'react';
+
+declare module 'react-icons/fa' {
+  export const FaChartPie: React.FC<React.SVGProps<SVGSVGElement>>;
+  export const FaArrowUp: React.FC<React.SVGProps<SVGSVGElement>>;
+  export const FaArrowDown: React.FC<React.SVGProps<SVGSVGElement>>;
+  export const FaUsers: React.FC<React.SVGProps<SVGSVGElement>>;
+  export const FaBoxes: React.FC<React.SVGProps<SVGSVGElement>>;
+  export const FaChartLine: React.FC<React.SVGProps<SVGSVGElement>>;
+  export const FaCalendarAlt: React.FC<React.SVGProps<SVGSVGElement>>;
+  export const FaSync: React.FC<React.SVGProps<SVGSVGElement>>;
+  export const FaUserPlus: React.FC<React.SVGProps<SVGSVGElement>>;
+  export const FaTrash: React.FC<React.SVGProps<SVGSVGElement>>;
+  export const FaEdit: React.FC<React.SVGProps<SVGSVGElement>>;
+  export const FaCheck: React.FC<React.SVGProps<SVGSVGElement>>;
+  export const FaTimes: React.FC<React.SVGProps<SVGSVGElement>>;
+  export const FaExclamationTriangle: React.FC<React.SVGProps<SVGSVGElement>>;
+  export const FaChevronLeft: React.FC<React.SVGProps<SVGSVGElement>>;
+  export const FaChevronRight: React.FC<React.SVGProps<SVGSVGElement>>;
+}
+EOL
+
+# Update next.config.js to remove deprecated options
+echo -e "${YELLOW}Updating Next.js configuration...${NC}"
+cat > $DEPLOY_DIR/next.config.js << EOL
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  reactStrictMode: true,
+  // SWC minification is handled automatically in newer Next.js versions
+}
+
+module.exports = nextConfig
+EOL
+
 # Build the application
 echo -e "${YELLOW}Building the application...${NC}"
-npm run build
+NODE_OPTIONS="--max-old-space-size=1024" npm run build
 
 if [ $? -ne 0 ]; then
     echo -e "${RED}Build failed. Please check the errors above.${NC}"
@@ -89,6 +154,32 @@ sudo chown -R $(whoami):$(whoami) $DEPLOY_DIR
 
 # Setup systemd service
 echo -e "${YELLOW}Setting up systemd service...${NC}"
+
+# Prompt for N8n webhook URL
+echo -e "\n${YELLOW}=== N8n Chat Widget Configuration ===${NC}"
+echo -e "This application can use N8n for the chat widget integration."
+read -p "Do you want to configure N8n webhook URL? (y/n): " configure_n8n
+
+# Initialize N8n variables
+N8N_WEBHOOK_URL=""
+
+if [[ "$configure_n8n" =~ ^[Yy]$ ]]; then
+    echo -e "\n${YELLOW}Please provide your N8n webhook URL:${NC}"
+    read -p "Enter your N8n webhook URL: " N8N_WEBHOOK_URL
+    
+    # Add to .env.local file
+    if [ -f "$DEPLOY_DIR/.env.local" ]; then
+        echo "NEXT_PUBLIC_N8N_WEBHOOK_URL=${N8N_WEBHOOK_URL}" >> $DEPLOY_DIR/.env.local
+    else
+        cat > $DEPLOY_DIR/.env.local << EOL
+NEXT_PUBLIC_N8N_WEBHOOK_URL=${N8N_WEBHOOK_URL}
+EOL
+    fi
+    
+    echo -e "${GREEN}N8n webhook URL saved to .env.local${NC}"
+else
+    echo -e "${YELLOW}Skipping N8n configuration.${NC}"
+fi
 
 # Update the service file with provided credentials
 cat > $DEPLOY_DIR/restaurant-dashboard.service << EOL
@@ -107,6 +198,7 @@ Environment=PORT=3000
 Environment=NEXT_PUBLIC_AIRTABLE_PERSONAL_ACCESS_TOKEN=${AIRTABLE_TOKEN}
 Environment=NEXT_PUBLIC_AIRTABLE_BASE_ID=${AIRTABLE_BASE_ID}
 Environment=NEXT_PUBLIC_RESTAURANT_TOTAL_SEATS=${RESTAURANT_SEATS}
+Environment=NEXT_PUBLIC_N8N_WEBHOOK_URL=${N8N_WEBHOOK_URL}
 # Add more environment variables as needed
 
 [Install]
@@ -194,5 +286,38 @@ else
     echo -e "   ${GREEN}NEXT_PUBLIC_AIRTABLE_BASE_ID=your_base_id_here${NC}"
     echo -e "   ${GREEN}NEXT_PUBLIC_RESTAURANT_TOTAL_SEATS=120${NC}"
 fi
+
+# Show N8n chat widget configuration status
+echo -e "\n${YELLOW}=== N8n Chat Widget Configuration Status ===${NC}"
+if [[ "$configure_n8n" =~ ^[Yy]$ ]]; then
+    echo -e "${GREEN}N8n Chat Widget is configured with your webhook URL.${NC}"
+    echo -e "To update this URL later:"
+    echo -e "1. Edit the service file: ${GREEN}sudo nano /etc/systemd/system/restaurant-dashboard.service${NC}"
+    echo -e "2. Edit the .env.local file: ${GREEN}nano $DEPLOY_DIR/.env.local${NC}"
+else
+    echo -e "${YELLOW}N8n Chat Widget is not configured.${NC}"
+    echo -e "To configure it later:"
+    echo -e "1. Edit the service file: ${GREEN}sudo nano /etc/systemd/system/restaurant-dashboard.service${NC}"
+    echo -e "2. Edit the .env.local file: ${GREEN}nano $DEPLOY_DIR/.env.local${NC}"
+    echo -e "   Add the following line:"
+    echo -e "   ${GREEN}NEXT_PUBLIC_N8N_WEBHOOK_URL=your_webhook_url_here${NC}"
+fi
+
+# Show fixes that were applied for TypeScript and build issues
+echo -e "\n${YELLOW}=== TypeScript and Build Fixes ===${NC}"
+echo -e "${GREEN}The following fixes were applied to ensure successful builds:${NC}"
+echo -e "1. TypeScript dependencies were pinned to compatible versions"
+echo -e "2. A TypeScript declaration file was created for React Icons"
+echo -e "3. Temporary swap space was configured to prevent memory issues"
+echo -e "4. Next.js configuration was updated to remove deprecated options"
+echo -e "\nIf you encounter TypeScript errors when making changes, you might need to:"
+echo -e "1. Add more icon types to: ${GREEN}$DEPLOY_DIR/react-icons.d.ts${NC}"
+echo -e "2. Adjust memory settings: ${GREEN}export NODE_OPTIONS=\"--max-old-space-size=1024\"${NC}"
+
+echo -e "\n${YELLOW}=== User Management ===${NC}"
+echo -e "${GREEN}The application includes an admin user named Andy Lennox.${NC}"
+echo -e "Username: Andy"
+echo -e "Password: AndyL2025"
+echo -e "Users can be managed from the Users Management page (admin access only)."
 
 echo -e "\n${YELLOW}=== Deployment Complete ===${NC}" 

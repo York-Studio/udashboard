@@ -1,6 +1,110 @@
+/* Import Montserrat font from Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+:root {
+  /* n8n Chat Widget Customization */
+  --chat--color-primary: #2e2e30;
+  --chat--color-primary-shade-50: #3b3b3d;
+  --chat--color-primary-shade-100: #48484a;
+  --chat--color-secondary: #2e2e30;
+  --chat--color-secondary-shade-50: #3b3b3d;
+  --chat--color-white: #ffffff;
+  --chat--color-light: #f2f4f8;
+  --chat--color-light-shade-50: #e6e9f1;
+  --chat--color-light-shade-100: #c2c5cc;
+  --chat--color-medium: #d2d4d9;
+  --chat--color-dark: #101330;
+  --chat--color-disabled: #777980;
+  --chat--color-typing: #404040;
+
+  --chat--spacing: 1rem;
+  --chat--border-radius: 1rem;
+  --chat--transition-duration: 0.15s;
+
+  --chat--window--width: 380px;
+  --chat--window--height: 600px;
+
+  --chat--header-height: auto;
+  --chat--header--padding: var(--chat--spacing);
+  --chat--header--background: var(--chat--color-primary);
+  --chat--header--color: var(--chat--color-light);
+  --chat--header--border-top: none;
+  --chat--header--border-bottom: none;
+  --chat--heading--font-size: 1.5em;
+  --chat--heading--font-family: "Inter", -apple-system, system-ui, sans-serif;
+  --chat--heading--text-align: center;
+  --chat--heading--font-weight: 700;
+  --chat--subtitle--font-size: inherit;
+  --chat--subtitle--line-height: 1.8;
+  --chat--subtitle--text-align: center;
+
+  --chat--textarea--height: 50px;
+  --chat--textarea--border-radius: 1rem;
+
+  --chat--message--font-size: 0.8rem;
+  --chat--message--padding: var(--chat--spacing);
+  --chat--message--border-radius: 1rem;
+  --chat--message-line-height: 1.4;
+  --chat--message--bot--background: var(--chat--color-white);
+  --chat--message--bot--color: var(--chat--color-dark);
+  --chat--message--bot--border: none;
+  --chat--message--user--background: var(--chat--color-secondary);
+  --chat--message--user--color: var(--chat--color-white);
+  --chat--message--user--border: none;
+  --chat--message--pre--background: rgba(0, 0, 0, 0.05);
+
+  --chat--toggle--background: var(--chat--color-primary);
+  --chat--toggle--hover--background: var(--chat--color-primary-shade-50);
+  --chat--toggle--active--background: var(--chat--color-primary-shade-100);
+  --chat--toggle--color: var(--chat--color-white);
+  --chat--toggle--size: 60px;
+  --chat--toggle--border-radius: 1rem;
+}
+
+/* Additional custom styles for the n8n chat widget */
+#n8n-chat .n8n-chat__header {
+  text-align: center !important;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+#n8n-chat .n8n-chat__header h1 {
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  width: 100%;
+  text-align: center !important;
+  margin: 0 auto;
+  font-weight: 700;
+}
+
+#n8n-chat .n8n-chat__messages {
+  font-size: 0.8rem;
+}
+
+html,
+body {
+  background-color: #f9fafb;
+  padding: 0;
+  margin: 0;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, Segoe UI, Roboto,
+    Oxygen, Ubuntu, Cantarell, Fira Sans, Droid Sans, Helvetica Neue, sans-serif;
+  color: #111827;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+* {
+  box-sizing: border-box;
+}
 
 @layer base {
   body {
@@ -51,6 +155,45 @@
   
   .dashboard-card-wide {
     @apply col-span-1 md:col-span-2;
+  }
+
+  /* Status color classes for text */
+  .text-success {
+    @apply text-green-600;
+  }
+  
+  .text-warning {
+    @apply text-amber-500;
+  }
+  
+  .text-danger {
+    @apply text-red-600;
+  }
+  
+  /* Status color classes for backgrounds */
+  .bg-success {
+    @apply bg-green-600;
+  }
+  
+  .bg-warning {
+    @apply bg-amber-500;
+  }
+  
+  .bg-danger {
+    @apply bg-red-600;
+  }
+  
+  /* Background opacity utils for the status colors */
+  .bg-success.bg-opacity-10 {
+    @apply bg-green-50;
+  }
+  
+  .bg-warning.bg-opacity-10 {
+    @apply bg-amber-50;
+  }
+  
+  .bg-danger.bg-opacity-10 {
+    @apply bg-red-50;
   }
   
   .button-primary {

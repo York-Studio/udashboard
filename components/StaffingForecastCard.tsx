@@ -36,8 +36,17 @@ const StaffingForecastCard: React.FC<StaffingForecastCardProps> = ({
   forecasts, 
   totalScheduledHours 
 }) => {
+  // Define restaurant opening hours
+  const openingHour = 11; // 11am
+  const closingHour = 23; // 11pm
+
+  // Filter forecasts to only include restaurant opening hours
+  const filteredForecasts = forecasts.filter(
+    f => f.hour >= openingHour && f.hour <= closingHour
+  );
+  
   // Sort forecasts by hour
-  const sortedForecasts = [...forecasts].sort((a, b) => a.hour - b.hour);
+  const sortedForecasts = [...filteredForecasts].sort((a, b) => a.hour - b.hour);
   
   // Prepare data for Chart.js
   const chartData = {
@@ -115,14 +124,14 @@ const StaffingForecastCard: React.FC<StaffingForecastCardProps> = ({
             size: 10,
           },
           maxRotation: 0,
-          autoSkip: true,
-          maxTicksLimit: 6,
+          autoSkip: true, // Enable autoSkip to show fewer labels
+          maxTicksLimit: 6, // Show at most 6 time labels on the x-axis
         },
       },
     },
   };
   
-  // Calculate staffing efficiency
+  // Calculate staffing efficiency based on restaurant hours only
   const totalScheduled = sortedForecasts.reduce((sum, item) => sum + item.scheduledStaff, 0);
   const totalRecommended = sortedForecasts.reduce((sum, item) => sum + item.recommendedStaff, 0);
   const staffingEfficiency = totalRecommended > 0 
@@ -143,6 +152,13 @@ const StaffingForecastCard: React.FC<StaffingForecastCardProps> = ({
       case 'Overstaffed': return 'text-warning';
       default: return 'text-success';
     }
+  };
+  
+  // Format hour for display with am/pm
+  const formatHour = (hour: number) => {
+    if (hour === 12) return '12pm';
+    if (hour === 0) return '12am';
+    return hour < 12 ? `${hour}am` : `${hour - 12}pm`;
   };
   
   return (
@@ -179,7 +195,7 @@ const StaffingForecastCard: React.FC<StaffingForecastCardProps> = ({
                 Need more staff at: {
                   sortedForecasts
                     .filter(f => f.scheduledStaff < f.recommendedStaff)
-                    .map(f => `${f.hour}:00`)
+                    .map(f => `${formatHour(f.hour)}`)
                     .join(', ')
                 }
               </p>
@@ -189,13 +205,61 @@ const StaffingForecastCard: React.FC<StaffingForecastCardProps> = ({
                 Overstaffed at: {
                   sortedForecasts
                     .filter(f => f.scheduledStaff > f.recommendedStaff + 1)
-                    .map(f => `${f.hour}:00`)
+                    .map(f => `${formatHour(f.hour)}`)
                     .join(', ')
                 }
               </p>
             )}
           </div>
         )}
+        
+        {/* Staffing Insights */}
+        <div className="mt-4 text-xs text-gray-700 p-2 bg-bg-light rounded-lg">
+          <p className="font-medium">Insights:</p>
+          <p>
+            {staffingStatus === 'Optimal' ? 
+              `Optimal staffing levels during operating hours with a ${Math.round(staffingEfficiency)}% efficiency ratio.` :
+              staffingStatus === 'Understaffed' ? 
+              `Understaffed by approximately ${Math.round((totalRecommended - totalScheduled) / totalRecommended * 100)}% during operating hours.` :
+              `Overstaffed by approximately ${Math.round((totalScheduled - totalRecommended) / totalRecommended * 100)}% during operating hours.`
+            }
+            
+            {sortedForecasts.length > 0 && ` Peak staffing need at ${
+              formatHour(sortedForecasts.reduce((max, current) => 
+                current.recommendedStaff > max.recommendedStaff ? current : max
+              ).hour)
+            } with ${
+              sortedForecasts.reduce((max, current) => 
+                current.recommendedStaff > max.recommendedStaff ? current : max
+              ).recommendedStaff
+            } staff recommended.`}
+            
+            {(() => {
+              // Find the hours with the biggest staffing gaps
+              const gaps = sortedForecasts.map(f => ({
+                hour: f.hour,
+                gap: f.recommendedStaff - f.scheduledStaff
+              }));
+              
+              const worstUnderstaffed = gaps.reduce((worst, current) => 
+                current.gap > worst.gap ? current : worst, 
+                { hour: 0, gap: -Infinity }
+              );
+              
+              const worstOverstaffed = gaps.reduce((worst, current) => 
+                current.gap < worst.gap ? current : worst, 
+                { hour: 0, gap: Infinity }
+              );
+              
+              if (worstUnderstaffed.gap > 1) {
+                return ` Most critical staffing shortage at ${formatHour(worstUnderstaffed.hour)} (${worstUnderstaffed.gap} additional staff needed).`;
+              } else if (worstOverstaffed.gap < -1) {
+                return ` Significant overstaffing at ${formatHour(worstOverstaffed.hour)} (${Math.abs(worstOverstaffed.gap)} excess staff).`;
+              }
+              return '';
+            })()}
+          </p>
+        </div>
       </div>
     </div>
   );

@@ -187,7 +187,6 @@ const InventoryPage: NextPage = () => {
     <Layout title="Inventory">
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-800">Inventory Management</h1>
-        <p className="text-gray-600 mt-1">Track and manage restaurant inventory levels</p>
       </div>
       
       {/* Low Stock Alert */}

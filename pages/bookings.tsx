@@ -190,7 +190,6 @@ const BookingsPage: NextPage = () => {
     <Layout title="Booking Capacity">
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-800">Booking Capacity</h1>
-        <p className="text-gray-600 mt-1">Monitor seat availability and occupancy rates</p>
       </div>
       
       {/* View Controls */}
@@ -236,7 +235,7 @@ const BookingsPage: NextPage = () => {
         </div>
         
         {/* Date Navigation */}
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center">
           <div className="flex items-center space-x-2">
             <button
               onClick={navigateToPrevious}
@@ -256,14 +255,6 @@ const BookingsPage: NextPage = () => {
               <FaChevronRight className="text-gray-600" />
             </button>
           </div>
-          
-          {/* Date Picker */}
-          <input
-            type="date"
-            value={format(selectedDate, 'yyyy-MM-dd')}
-            onChange={handleDateChange}
-            className="border border-gray-300 rounded-md px-3 py-2"
-          />
         </div>
       </div>
       

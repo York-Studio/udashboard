@@ -277,13 +277,6 @@ const Dashboard: NextPage = () => {
         </div>
       )}
       
-      {/* Selected Date Display */}
-      <div className="mb-6">
-        <h2 className="text-lg font-semibold text-gray-700">
-          Data for {format(selectedDate, 'EEEE, dd/MM/yyyy')}
-        </h2>
-      </div>
-      
       {/* Dashboard Content */}
       {isLoading && !occupancyData ? (
         <div className="flex justify-center items-center h-64">

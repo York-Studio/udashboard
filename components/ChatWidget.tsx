@@ -10,8 +10,10 @@ const ChatWidget = () => {
           __html: `
             window.ChatWidgetConfig = {
                 webhook: {
-                    url: 'https://n8n.yorkstudio.io/webhook/abf9ab75-eaca-4b91-b3ba-c0f83d3daba4/chat',
-                    route: 'general'
+                    url: 'https://n8n.yorkstudio.io/webhook/1f83e8ac-d465-454a-8327-cef7f0149cb1/chat',
+                    route: 'general',
+                    chatInputKey: 'chatInput',
+                    chatSessionKey: 'sessionId'
                 },
                 branding: {
                     logo: 'https://static.wixstatic.com/media/7e4758_e932d44784ff4328b86f838bf98f102a~mv2.png/v1/fill/w_372,h_264,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/7e4758_e932d44784ff4328b86f838bf98f102a~mv2.png',

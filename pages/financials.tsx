@@ -336,7 +336,7 @@ const FinancialsPage: NextPage = () => {
           </div>
           
           {/* Date Navigation */}
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center">
             <div className="flex items-center space-x-2">
               <button
                 onClick={navigateToPrevious}
@@ -356,14 +356,6 @@ const FinancialsPage: NextPage = () => {
                 <FaChevronRight className="text-gray-600" />
               </button>
             </div>
-            
-            {/* Date Picker */}
-            <input
-              type="date"
-              value={format(selectedDate, 'yyyy-MM-dd')}
-              onChange={handleDateChange}
-              className="border border-gray-300 rounded-md px-3 py-2"
-            />
           </div>
         </div>
         

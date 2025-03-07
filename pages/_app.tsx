@@ -3,7 +3,7 @@ import Head from 'next/head';
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider } from '../contexts/AuthContext';
 import ProtectedRoute from '../components/ProtectedRoute';
-import ChatWidget from '../components/ChatWidget';
+import N8nChatWidget from '../components/N8nChatWidget';
 import { useRouter } from 'next/router';
 import '@/styles/globals.css';
 
@@ -29,7 +29,7 @@ function MyApp({ Component, pageProps }: AppProps) {
       </Head>
       <AuthProvider>
         <Toaster position="top-right" />
-        {!isPublicRoute && <ChatWidget />}
+        {!isPublicRoute && <N8nChatWidget />}
         {isPublicRoute ? (
           <Component {...pageProps} />
         ) : isAdminRoute ? (

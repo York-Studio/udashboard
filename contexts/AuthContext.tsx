@@ -39,7 +39,50 @@ const initialUsers: User[] = [
     name: 'Senior Waiter',
     role: 'staff',
   },
+  {
+    id: '5',
+    username: 'Andy',
+    password: 'AndyL2025',
+    name: 'Andy Lennox',
+    role: 'admin',
+  },
 ];
+
+// Utility functions for user storage
+const UserStorage = {
+  getUsers: (): User[] => {
+    try {
+      const storedUsers = localStorage.getItem('restaurant_dashboard_users');
+      if (storedUsers) {
+        const parsedUsers = JSON.parse(storedUsers);
+        if (Array.isArray(parsedUsers) && parsedUsers.length > 0) {
+          return parsedUsers;
+        }
+      }
+      // If no valid data found, initialize with default users and save
+      UserStorage.saveUsers(initialUsers);
+      return initialUsers;
+    } catch (error) {
+      console.error('Error loading users:', error);
+      // If error, reset to initial users
+      UserStorage.saveUsers(initialUsers);
+      return initialUsers;
+    }
+  },
+  
+  saveUsers: (users: User[]): void => {
+    try {
+      localStorage.setItem('restaurant_dashboard_users', JSON.stringify(users));
+      console.log('Users saved successfully:', users.length);
+    } catch (error) {
+      console.error('Error saving users:', error);
+    }
+  },
+  
+  clearUsers: (): void => {
+    localStorage.removeItem('restaurant_dashboard_users');
+  }
+};
 
 // Define the AuthContext interface
 export interface AuthContextType {
@@ -52,6 +95,7 @@ export interface AuthContextType {
   addUser: (user: Omit<User, 'id'> & { id: string }) => boolean;
   removeUser: (userId: string) => boolean;
   updateUser: (userId: string, userData: Partial<Omit<User, 'id' | 'password'>>) => boolean;
+  resetUsers: () => void; // Added function to reset users to initial state
 }
 
 // Create the auth context with a default value
@@ -65,6 +109,7 @@ const AuthContext = createContext<AuthContextType>({
   addUser: () => false,
   removeUser: () => false,
   updateUser: () => false,
+  resetUsers: () => {},
 });
 
 // Provider component
@@ -74,13 +119,14 @@ interface AuthProviderProps {
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [users, setUsers] = useState<User[]>(initialUsers);
+  const [users, setUsers] = useState<User[]>([]);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(true);
 
-  // Check local storage for existing user session on mount
+  // Initialize on mount
   useEffect(() => {
-    const storedUser = localStorage.getItem('user');
+    // Load current user if available
+    const storedUser = localStorage.getItem('restaurant_dashboard_current_user');
     if (storedUser) {
       try {
         const parsedUser = JSON.parse(storedUser);
@@ -88,17 +134,22 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         setIsAuthenticated(true);
       } catch (error) {
         console.error('Failed to parse stored user:', error);
-        localStorage.removeItem('user');
+        localStorage.removeItem('restaurant_dashboard_current_user');
       }
     }
+
+    // Load all users
+    setUsers(UserStorage.getUsers());
     setLoading(false);
   }, []);
 
   // Login function
   const login = async (username: string, password: string): Promise<boolean> => {
-    // For demo purposes, we're checking against hardcoded users
-    // In a real app, you would make an API call to authenticate
-    const foundUser = users.find(
+    // Get latest users from storage
+    const currentUsers = UserStorage.getUsers();
+    
+    // Find matching user
+    const foundUser = currentUsers.find(
       (u) => u.username === username && u.password === password
     );
 
@@ -108,8 +159,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setUser(userWithoutPassword as User);
       setIsAuthenticated(true);
       
-      // Store in localStorage for session persistence
-      localStorage.setItem('user', JSON.stringify(userWithoutPassword));
+      // Update users state with latest from storage
+      setUsers(currentUsers);
+      
+      // Store current user in localStorage
+      localStorage.setItem('restaurant_dashboard_current_user', JSON.stringify(userWithoutPassword));
       return true;
     }
 
@@ -120,18 +174,29 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const logout = () => {
     setUser(null);
     setIsAuthenticated(false);
-    localStorage.removeItem('user');
+    localStorage.removeItem('restaurant_dashboard_current_user');
   };
 
   // Add user function
   const addUser = (newUser: Omit<User, 'id'> & { id: string }): boolean => {
     try {
+      // Get fresh users data
+      const currentUsers = UserStorage.getUsers();
+      
       // Check if username already exists
-      if (users.some(u => u.username === newUser.username)) {
+      if (currentUsers.some(u => u.username === newUser.username)) {
         return false;
       }
       
-      setUsers(prevUsers => [...prevUsers, newUser as User]);
+      // Add the new user
+      const updatedUsers = [...currentUsers, newUser as User];
+      
+      // Save to storage
+      UserStorage.saveUsers(updatedUsers);
+      
+      // Update state
+      setUsers(updatedUsers);
+      
       return true;
     } catch (error) {
       console.error('Error adding user:', error);
@@ -142,7 +207,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // Remove user function
   const removeUser = (userId: string): boolean => {
     try {
-      setUsers(prevUsers => prevUsers.filter(u => u.id !== userId));
+      // Get fresh users data
+      const currentUsers = UserStorage.getUsers();
+      
+      // Filter out the user to remove
+      const updatedUsers = currentUsers.filter(u => u.id !== userId);
+      
+      // Save to storage
+      UserStorage.saveUsers(updatedUsers);
+      
+      // Update state
+      setUsers(updatedUsers);
+      
       return true;
     } catch (error) {
       console.error('Error removing user:', error);
@@ -156,30 +232,49 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     userData: Partial<Omit<User, 'id' | 'password'>>
   ): boolean => {
     try {
+      // Get fresh users data
+      const currentUsers = UserStorage.getUsers();
+      
       let updated = false;
       
-      setUsers(prevUsers => 
-        prevUsers.map(u => {
-          if (u.id === userId) {
-            updated = true;
-            return { ...u, ...userData };
-          }
-          return u;
-        })
-      );
+      // Update the specific user
+      const updatedUsers = currentUsers.map(u => {
+        if (u.id === userId) {
+          updated = true;
+          return { ...u, ...userData };
+        }
+        return u;
+      });
       
-      // If the updated user is the current user, update the user state and localStorage
-      if (updated && user && user.id === userId) {
-        const updatedUser = { ...user, ...userData };
-        setUser(updatedUser);
-        localStorage.setItem('user', JSON.stringify(updatedUser));
+      if (!updated) {
+        return false;
       }
       
-      return updated;
+      // Save to storage
+      UserStorage.saveUsers(updatedUsers);
+      
+      // Update state
+      setUsers(updatedUsers);
+      
+      // If the updated user is the current user, update the user state and localStorage
+      if (user && user.id === userId) {
+        const updatedUser = { ...user, ...userData };
+        setUser(updatedUser);
+        localStorage.setItem('restaurant_dashboard_current_user', JSON.stringify(updatedUser));
+      }
+      
+      return true;
     } catch (error) {
       console.error('Error updating user:', error);
       return false;
     }
+  };
+  
+  // Reset users to initial state
+  const resetUsers = () => {
+    UserStorage.saveUsers(initialUsers);
+    setUsers(initialUsers);
+    return true;
   };
 
   return (
@@ -194,6 +289,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         addUser,
         removeUser,
         updateUser,
+        resetUsers,
       }}
     >
       {children}

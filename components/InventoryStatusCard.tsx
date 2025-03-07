@@ -32,6 +32,13 @@ const InventoryStatusCard: React.FC<InventoryStatusCardProps> = ({
     return 'text-danger';
   };
   
+  // Get background color based on inventory health
+  const getHealthBgColor = (percentage: number) => {
+    if (percentage >= 80) return 'bg-success';
+    if (percentage >= 60) return 'bg-warning';
+    return 'bg-danger';
+  };
+  
   return (
     <div className="dashboard-card">
       <div className="dashboard-card-header">
@@ -69,9 +76,7 @@ const InventoryStatusCard: React.FC<InventoryStatusCardProps> = ({
           
           <div className="mt-2 relative h-2 bg-gray-200 rounded-full overflow-hidden">
             <div 
-              className={`absolute top-0 left-0 h-full ${
-                getHealthColor(inventoryHealthPercentage).replace('text-', 'bg-')
-              }`}
+              className={`absolute top-0 left-0 h-full ${getHealthBgColor(inventoryHealthPercentage)}`}
               style={{ width: `${inventoryHealthPercentage}%` }}
             ></div>
           </div>
